@@ -181,8 +181,15 @@ static ut64 lua_parse_string(RzBuffer *buffer, ut8 **dest, int *str_len, ut64 of
 		ret = RZ_NEWS(ut8, ret_buf_size);
 		if (ret == NULL) {
 			string_len = 0;
+		} else if (rz_buf_read_at(buffer, offset, ret, string_len) != string_len) {
+			// Declared string_len goes past the real data (e.g. a truncated
+			// file); RZ_NEWS() is not zeroed, so returning this buffer as-is
+			// would leak whatever uninitialized heap bytes follow the short
+			// read as if they were real string content.
+			free(ret);
+			ret = NULL;
+			string_len = 0;
 		} else {
-			rz_buf_read_at(buffer, offset, ret, string_len);
 			ret[string_len] = 0x00;
 		}
 		offset += string_len;
