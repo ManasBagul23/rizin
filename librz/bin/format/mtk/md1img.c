@@ -355,7 +355,16 @@ RZ_IPI bool md1img_load_buffer(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_
 			break;
 		}
 
-		// Validate that data fits in the buffer
+		// Validate that data fits in the buffer. data_offset alone (section_start +
+		// the file-provided, only lower-bounded hdr_size) can already be past
+		// buf_size; truncating via "buf_size - data_offset" in that case would
+		// underflow the ut64 subtraction and, once truncated to the ut32 dsize
+		// field, leave an arbitrary non-zero size for a section whose data_offset
+		// does not point at anything real.
+		if (sec.data_offset > buf_size) {
+			RZ_LOG_WARN("md1img: section '%s' data offset is beyond the file size\n", sec.name);
+			break;
+		}
 		if (sec.data_offset + sec.dsize > buf_size) {
 			RZ_LOG_WARN("md1img: section '%s' data exceeds file size, truncating\n", sec.name);
 			sec.dsize = buf_size - sec.data_offset;
