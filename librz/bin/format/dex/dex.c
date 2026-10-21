@@ -146,7 +146,11 @@ static DexProtoId *dex_proto_id_new(RzBuffer *buf, ut64 offset) {
 	return proto_id;
 
 dex_proto_id_new_fail:
-	free(proto_id);
+	// A read failure partway through the type_list loop above jumps here
+	// after type_list was already allocated; dex_proto_id_free() (used by
+	// every other caller) frees it too, but this label only freed the
+	// outer struct.
+	dex_proto_id_free(proto_id);
 	return NULL;
 }
 
