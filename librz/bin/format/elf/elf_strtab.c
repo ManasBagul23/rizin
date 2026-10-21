@@ -35,7 +35,13 @@ RZ_OWN RzBinElfStrtab *Elf_(rz_bin_elf_strtab_new)(RZ_NONNULL ELFOBJ *bin, ut64 
 		return NULL;
 	}
 
-	if (rz_buf_read_at(bin->b, offset, (ut8 *)result->data, size) < 0) {
+	// rz_buf_read_at() returns the number of bytes actually read (0..size),
+	// not just a negative error code; a short read (e.g. a truncated file
+	// whose strtab size claims more bytes than remain) must be rejected
+	// too, since result->data is RZ_NEWS()-allocated (unzeroed) and an
+	// unfilled tail would otherwise leak leftover heap bytes through
+	// rz_bin_elf_strtab_get()/_get_dup().
+	if (rz_buf_read_at(bin->b, offset, (ut8 *)result->data, size) != (st64)size) {
 		Elf_(rz_bin_elf_strtab_free)(result);
 		return NULL;
 	}
