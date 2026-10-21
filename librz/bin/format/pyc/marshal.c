@@ -781,6 +781,11 @@ static void free_object(pyc_object *object) {
 	switch (object->type) {
 	case TYPE_SMALL_TUPLE:
 	case TYPE_TUPLE:
+	case TYPE_LIST:
+	case TYPE_SET:
+	case TYPE_FROZENSET:
+	case TYPE_DICT:
+	case TYPE_SLICE:
 		rz_list_free(object->data);
 		break;
 	case TYPE_STRING:
@@ -793,6 +798,13 @@ static void free_object(pyc_object *object) {
 	case TYPE_SHORT_ASCII:
 	case TYPE_ASCII:
 	case TYPE_SHORT_ASCII_INTERNED:
+	case TYPE_LONG:
+	case TYPE_FLOAT:
+	case TYPE_BINARY_FLOAT:
+	case TYPE_BINARY_COMPLEX:
+	case TYPE_COMPLEX:
+	case TYPE_INT64:
+	case TYPE_UNICODE:
 		free(object->data);
 		break;
 	case TYPE_CODE_v0:
@@ -812,21 +824,16 @@ static void free_object(pyc_object *object) {
 	case TYPE_REF:
 		free_object(object->data);
 		break;
-	case TYPE_SET:
-	case TYPE_FROZENSET:
+	case TYPE_STRINGREF:
+	case TYPE_INTERNED:
+		// object->data here is a pointer borrowed from pyc->interned_table,
+		// which owns it and frees it when that list is destroyed; freeing
+		// it here too would double-free it.
+		break;
 	case TYPE_ELLIPSIS:
 	case TYPE_STOPITER:
-	case TYPE_BINARY_COMPLEX:
-	case TYPE_BINARY_FLOAT:
-	case TYPE_COMPLEX:
-	case TYPE_STRINGREF:
-	case TYPE_DICT:
-	case TYPE_FLOAT:
-	case TYPE_INT64:
-	case TYPE_INTERNED:
-	case TYPE_LIST:
-	case TYPE_LONG:
-	case TYPE_UNICODE:
+		// no payload: these are allocated with RZ_NEW0() and never carry data.
+		break;
 	case TYPE_UNKNOWN:
 		RZ_LOG_ERROR("Free not implemented for type %x\n", object->type);
 		break;
