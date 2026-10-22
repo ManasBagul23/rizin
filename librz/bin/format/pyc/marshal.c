@@ -207,6 +207,11 @@ static pyc_object *get_long_object(RzBuffer *buffer) {
 		hexstr[j] = 0;
 		for (i = 0; i < ndigits; i++) {
 			n = get_ut16(buffer, &error);
+			if (error) {
+				free(hexstr);
+				free(ret);
+				return NULL;
+			}
 			tmp |= n << left;
 			left += 15;
 
