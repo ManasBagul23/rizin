@@ -501,11 +501,12 @@ static pyc_object *get_interned_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 	ret->type = TYPE_INTERNED;
 	ret->data = get_bytes(buffer, n);
-	/* add data pointer to interned table */
-	rz_list_append(pyc->interned_table, ret->data);
 	if (!ret->data) {
 		RZ_FREE(ret);
+		return NULL;
 	}
+	/* add data pointer to interned table */
+	rz_list_append(pyc->interned_table, ret->data);
 	return ret;
 }
 
