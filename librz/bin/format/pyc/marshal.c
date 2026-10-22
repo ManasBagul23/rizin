@@ -468,6 +468,9 @@ static pyc_object *get_unicode_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 	ut64 addr = rz_buf_tell(buffer);
 	ret = RZ_NEW0(pyc_object);
+	if (!ret) {
+		return NULL;
+	}
 	ret->type = TYPE_UNICODE;
 	ret->data = get_bytes(buffer, n);
 	if (!ret->data) {
@@ -476,6 +479,7 @@ static pyc_object *get_unicode_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 
 	if (!add_string_to_cache(pyc, addr, ret->data, n, (ut32)rz_utf8_strlen(ret->data), RZ_STRING_ENC_UTF8)) {
+		free(ret->data);
 		RZ_FREE(ret);
 		return NULL;
 	}
