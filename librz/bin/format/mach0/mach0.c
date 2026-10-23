@@ -1613,13 +1613,20 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 				dy.name = rz_read_ble32(&sdy[8], bin->big_endian);
 
 				int len = dy.cmdsize;
-				char *buf = malloc(len + 1);
-				if (buf) {
-					// wtf @ off + 0xc ?
-					rz_buf_read_at(bin->b, off + 0xc, (ut8 *)buf, len);
-					buf[len] = 0;
-					free(bin->intrp);
-					bin->intrp = buf;
+				if (len < 0 || off + 0xc + (ut64)len > bin->size) {
+					RZ_LOG_ERROR("mach0: dylinker command size out of bounds\n");
+				} else {
+					char *buf = malloc(len + 1);
+					if (buf) {
+						// wtf @ off + 0xc ?
+						if (rz_buf_read_at(bin->b, off + 0xc, (ut8 *)buf, len) != len) {
+							free(buf);
+						} else {
+							buf[len] = 0;
+							free(bin->intrp);
+							bin->intrp = buf;
+						}
+					}
 				}
 			}
 		} break;
