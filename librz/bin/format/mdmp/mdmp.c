@@ -1093,9 +1093,15 @@ static int check_pe32_buf(RzBuffer *buf, ut64 length) {
 
 	if (length > idx + 0x18 + 2) {
 		ut8 tmp1[2], tmp2[2], tmp3[2];
-		rz_buf_read_at(buf, 0, tmp1, 2);
-		rz_buf_read_at(buf, idx, tmp2, 2);
-		rz_buf_read_at(buf, idx + 0x18, tmp3, 2);
+		// length is the module's claimed size, which can outrun the real
+		// backing buffer (e.g. after a short read building it from a
+		// truncated minidump) -- check every read against the buffer buf
+		// actually has, not just the claimed length.
+		if (rz_buf_read_at(buf, 0, tmp1, 2) != 2 ||
+			rz_buf_read_at(buf, idx, tmp2, 2) != 2 ||
+			rz_buf_read_at(buf, idx + 0x18, tmp3, 2) != 2) {
+			return false;
+		}
 		if (!memcmp(tmp1, "MZ", 2) && !memcmp(tmp2, "PE", 2) && !memcmp(tmp3, "\x0b\x01", 2)) {
 			return true;
 		}
@@ -1124,9 +1130,11 @@ static int check_pe64_buf(RzBuffer *buf, ut64 length) {
 
 	if (length >= idx + 0x20) {
 		ut8 tmp1[2], tmp2[2], tmp3[2];
-		rz_buf_read_at(buf, 0, tmp1, 2);
-		rz_buf_read_at(buf, idx, tmp2, 2);
-		rz_buf_read_at(buf, idx + 0x18, tmp3, 2);
+		if (rz_buf_read_at(buf, 0, tmp1, 2) != 2 ||
+			rz_buf_read_at(buf, idx, tmp2, 2) != 2 ||
+			rz_buf_read_at(buf, idx + 0x18, tmp3, 2) != 2) {
+			return false;
+		}
 		if (!memcmp(tmp1, "MZ", 2) && !memcmp(tmp2, "PE", 2) && !memcmp(tmp3, "\x0b\x02", 2)) {
 			ret = true;
 		}
