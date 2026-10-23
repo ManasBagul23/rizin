@@ -125,19 +125,25 @@ int PE_(bin_pe_init_security)(RzBinPEObj *bin) {
 			RZ_FREE(cert);
 			return false;
 		}
-		if (cert->dwLength < 6) {
-			RZ_LOG_ERROR("Invalid cert.dwLength (must be > 6)\n");
+		if (cert->dwLength < 8) {
+			RZ_LOG_ERROR("Invalid cert.dwLength (must be > 8)\n");
 			RZ_FREE(cert);
 			return false;
 		}
-		if (!(cert->bCertificate = malloc(cert->dwLength - 6))) {
+		ut32 cert_data_size = cert->dwLength - 8;
+		if (!(cert->bCertificate = malloc(cert_data_size))) {
 			RZ_FREE(cert);
 			return false;
 		}
-		rz_buf_read_at(bin->b, offset + 8, cert->bCertificate, cert->dwLength - 6);
+		if (rz_buf_read_at(bin->b, offset + 8, cert->bCertificate, cert_data_size) != cert_data_size) {
+			RZ_LOG_ERROR("Cannot read certificate data\n");
+			RZ_FREE(cert->bCertificate);
+			RZ_FREE(cert);
+			return false;
+		}
 
 		if (!bin->cms && cert->wCertificateType == PE_WIN_CERT_TYPE_PKCS_SIGNED_DATA) {
-			bin->cms = rz_pkcs7_cms_parse(cert->bCertificate, cert->dwLength - 6);
+			bin->cms = rz_pkcs7_cms_parse(cert->bCertificate, cert_data_size);
 			bin->spcinfo = bin->cms ? rz_pkcs7_spcinfo_parse(bin->cms) : NULL;
 		}
 		if (!bin->cms || !bin->spcinfo) {
