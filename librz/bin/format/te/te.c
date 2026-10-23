@@ -128,7 +128,7 @@ static TE_DWord rz_bin_te_vaddr_to_paddr(struct rz_bin_te_obj_t *bin, TE_DWord v
 
 static int rz_bin_te_init_sections(struct rz_bin_te_obj_t *bin) {
 	int sections_size = sizeof(TE_image_section_header) * bin->header->NumberOfSections;
-	if (sections_size > bin->size) {
+	if (sections_size > bin->size || sizeof(TE_image_file_header) + sections_size > bin->size) {
 		RZ_LOG_ERROR("Invalid TE NumberOfSections value\n");
 		return false;
 	}
@@ -137,8 +137,10 @@ static int rz_bin_te_init_sections(struct rz_bin_te_obj_t *bin) {
 		return false;
 	}
 	if (rz_buf_read_at(bin->b, sizeof(TE_image_file_header),
-		    (ut8 *)bin->section_header, sections_size) == -1) {
+		    (ut8 *)bin->section_header, sections_size) != sections_size) {
 		RZ_LOG_ERROR("Failed to read TE sections headers\n");
+		free(bin->section_header);
+		bin->section_header = NULL;
 		return false;
 	}
 	return true;
