@@ -1194,13 +1194,17 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	case TYPE_NULL:
 		return NULL;
 	case TYPE_TRUE:
-		return get_true_object();
+		ret = get_true_object();
+		break;
 	case TYPE_FALSE:
-		return get_false_object();
+		ret = get_false_object();
+		break;
 	case TYPE_NONE:
-		return get_none_object();
+		ret = get_none_object();
+		break;
 	case TYPE_REF:
-		return get_ref_object(pyc, buffer);
+		ret = get_ref_object(pyc, buffer);
+		break;
 	case TYPE_SMALL_TUPLE:
 		ret = get_small_tuple_object(pyc, buffer);
 		break;
