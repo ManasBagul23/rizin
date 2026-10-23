@@ -915,6 +915,7 @@ static void le_unpack_compressed(rz_bin_le_obj_t *bin, ut8 *out, ut32 out_size, 
 // appends N bytes at *(out - backstep) to *out, ranges can overlap!
 #define DUP(backstep, N) \
 	CHECK(out_size_total - out_size >= backstep); \
+	CHECK((N) <= out_size); \
 	for (ut32 i = (N); i; i--, out++, out_size--) { \
 		*out = *(out - backstep); \
 	}
