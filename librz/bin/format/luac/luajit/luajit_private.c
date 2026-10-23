@@ -100,7 +100,15 @@ RZ_IPI ut64 luajit_parse_string(RzBuffer *buf, ut64 offset, ut32 type, char **de
 		return offset;
 	}
 
-	rz_buf_read_at(buf, offset, (ut8 *)str, len);
+	if (rz_buf_read_at(buf, offset, (ut8 *)str, len) != len) {
+		// A declared length going past the real data (e.g. a truncated or
+		// crafted file) would otherwise leave str's unread tail as whatever
+		// uninitialized heap RZ_NEWS() happened to return, handed to the
+		// caller as if it were real string content.
+		RZ_FREE(str);
+		*dest = NULL;
+		return offset + len;
+	}
 	str[len] = '\0';
 
 	if (dest) {
